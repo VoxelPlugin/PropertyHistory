@@ -1,0 +1,25 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "Unknown",
+	"FriendlyName": "Property History",
+	"Description": "See property change history inline",
+	"Category": "Editor",
+	"CreatedBy": "Victor Careil",
+	"CreatedByURL": "https://victorcareil.com",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "https://discord.victorcareil.com",
+	"EnabledByDefault": true,
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "PropertyHistory",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
