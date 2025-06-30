@@ -22,7 +22,9 @@ bool FPropertyHistoryHandler::Initialize(const UObject& Object)
 		const UObject* CurrentObject = &Object;
 		OuterChain.Add(CurrentObject);
 
-		while (!CurrentObject->IsA<AActor>())
+		while (
+			!CurrentObject->IsA<UPackage>() &&
+			!CurrentObject->IsPackageExternal())
 		{
 			CurrentObject = CurrentObject->GetOuter();
 
@@ -35,14 +37,14 @@ bool FPropertyHistoryHandler::Initialize(const UObject& Object)
 		}
 	}
 
-	const AActor* Actor = Cast<AActor>(OuterChain.Last().Get());
-	if (!ensure(Actor) ||
-		!Actor->IsPackageExternal())
+	// Also handles UPackage
+	const UPackage* Package = OuterChain.Last()->GetExternalPackage();
+	if (!ensure(Package))
 	{
 		return false;
 	}
 
-	const FString PackageName = Actor->GetExternalPackage()->GetName();
+	const FString PackageName = Package->GetName();
 	const TArray<FString> PackageFilenames = SourceControlHelpers::PackageFilenames({ PackageName });
 
 	if (!ensure(PackageFilenames.Num() == 1))
@@ -241,6 +243,13 @@ void FPropertyHistoryHandler::Tick()
 		if (!ensure(Outer))
 		{
 			return;
+		}
+
+		if (Outer->IsA<UPackage>())
+		{
+			// Root package
+			ensure(NewObject == Package);
+			continue;
 		}
 
 		NewObject = StaticFindObject(nullptr, NewObject, *Outer->GetName());
