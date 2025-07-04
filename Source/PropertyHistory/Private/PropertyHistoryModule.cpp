@@ -50,7 +50,7 @@ public:
 		Menu->AddDynamicSection(NAME_None, MakeLambdaDelegate([](UToolMenu* ToolMenu)
 		{
 			const UDetailRowMenuContext* Context = ToolMenu->FindContext<UDetailRowMenuContext>();
-			const UDetailRowMenuContextPrivate* ContextPrivate = ToolMenu->Context.FindContext<UDetailRowMenuContextPrivate>();
+			const UDetailRowMenuContextPrivate* ContextPrivate = ToolMenu->FindContext<UDetailRowMenuContextPrivate>();
 			if (!Context ||
 				!ContextPrivate)
 			{
