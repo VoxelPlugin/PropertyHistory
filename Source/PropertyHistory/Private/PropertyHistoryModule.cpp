@@ -15,6 +15,13 @@ DEFINE_PRIVATE_ACCESS(FPropertyNode, InstanceMetaData)
 DEFINE_PRIVATE_ACCESS(SDetailsViewBase, DetailLayouts)
 DEFINE_PRIVATE_ACCESS_FUNCTION(SDetailSingleItemRow, GetPropertyNode);
 
+UClass* UDetailRowMenuContextPrivate::GetPrivateStaticClass()
+{
+	static UClass* Class = FindObjectChecked<UClass>(nullptr, TEXT("/Script/PropertyEditor.DetailRowMenuContextPrivate"));
+	check(Class);
+	return Class;
+}
+
 class FPropertyHistoryModule : public IModuleInterface
 {
 public:
@@ -42,23 +49,15 @@ public:
 
 		Menu->AddDynamicSection(NAME_None, MakeLambdaDelegate([](UToolMenu* ToolMenu)
 		{
-			UClass* Class = FindObject<UClass>(nullptr, TEXT("/Script/PropertyEditor.DetailRowMenuContextPrivate"));
-			if (!ensure(Class))
+			const UDetailRowMenuContext* Context = ToolMenu->FindContext<UDetailRowMenuContext>();
+			const UDetailRowMenuContextPrivate* ContextPrivate = ToolMenu->Context.FindContext<UDetailRowMenuContextPrivate>();
+			if (!Context ||
+				!ContextPrivate)
 			{
 				return;
 			}
 
-			const UDetailRowMenuContext* DetailsContext = ToolMenu->FindContext<UDetailRowMenuContext>();
-			UObject* Context = ToolMenu->Context.FindByClass(Class);
-			if (!DetailsContext ||
-				!Context ||
-				!Context->GetClass()->IsChildOf(Class))
-			{
-				return;
-			}
-
-			const UDetailRowMenuContextPrivate* ContextObject = static_cast<UDetailRowMenuContextPrivate*>(Context);
-			const TSharedPtr<SDetailSingleItemRow> Row = StaticCastSharedPtr<SDetailSingleItemRow>(ContextObject->Row.Pin());
+			const TSharedPtr<SDetailSingleItemRow> Row = StaticCastSharedPtr<SDetailSingleItemRow>(ContextPrivate->Row.Pin());
 			if (!Row)
 			{
 				return;
@@ -137,7 +136,7 @@ public:
 				if (NumAddedProperties > 0)
 				{
 					const FPropertyData& RootProperty = Properties.Last();
-					SDetailsViewBase* DetailsViewBase = reinterpret_cast<SDetailsViewBase*>(DetailsContext->DetailsView);
+					SDetailsViewBase* DetailsViewBase = reinterpret_cast<SDetailsViewBase*>(Context->DetailsView);
 					const TSharedPtr<FPropertyNode> RootNode = INLINE_LAMBDA -> TSharedPtr<FPropertyNode>
 					{
 						for (const FDetailLayoutData& DetailLayout : PrivateAccess::DetailLayouts(*DetailsViewBase))
@@ -194,7 +193,7 @@ public:
 			}
 
 			FPropertyHistoryProcessor Processor(Object, Properties, PropertyGuid);
-			Processor.DetailsView = DetailsContext->DetailsView;
+			Processor.DetailsView = Context->DetailsView;
 			void* Container = nullptr;
 			if (!Processor.Process(Container))
 			{
