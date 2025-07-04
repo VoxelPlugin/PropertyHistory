@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PropertyHistoryUtilities.h"
 
 class UPreviewMaterial;
 class UMaterialEditorInstanceConstant;
@@ -51,7 +52,11 @@ public:
 
 	FGuid Guid;
 
+#if PROPERTY_HISTORY_ENGINE_VERSION >= 506
+	TSharedPtr<IDetailsView> DetailsView;
+#else
 	IDetailsView* DetailsView = nullptr;
+#endif
 
 private:
 	UScriptStruct* TargetStampStruct = nullptr;
