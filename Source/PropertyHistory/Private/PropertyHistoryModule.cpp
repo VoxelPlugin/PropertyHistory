@@ -136,9 +136,18 @@ public:
 				if (NumAddedProperties > 0)
 				{
 					const FPropertyData& RootProperty = Properties.Last();
+#if PROPERTY_HISTORY_ENGINE_VERSION >= 506
+					const TSharedPtr<SDetailsViewBase> DetailsViewBase = StaticCastSharedPtr<SDetailsViewBase>(Context->DetailsView.Pin());
+#else
 					SDetailsViewBase* DetailsViewBase = reinterpret_cast<SDetailsViewBase*>(Context->DetailsView);
+#endif
 					const TSharedPtr<FPropertyNode> RootNode = INLINE_LAMBDA -> TSharedPtr<FPropertyNode>
 					{
+						if (!DetailsViewBase)
+						{
+							return nullptr;
+						}
+
 						for (const FDetailLayoutData& DetailLayout : PrivateAccess::DetailLayouts(*DetailsViewBase))
 						{
 							const TMap<FName, FPropertyNodeMap>* PropertyMapPtr = DetailLayout.ClassToPropertyMap.Find(RootProperty.Property->GetOwner<UStruct>()->GetFName());
@@ -193,7 +202,11 @@ public:
 			}
 
 			FPropertyHistoryProcessor Processor(Object, Properties, PropertyGuid);
+#if PROPERTY_HISTORY_ENGINE_VERSION >= 506
+			Processor.DetailsView = Context->DetailsView.Pin();
+#else
 			Processor.DetailsView = Context->DetailsView;
+#endif
 			void* Container = nullptr;
 			if (!Processor.Process(Container))
 			{
