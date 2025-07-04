@@ -4,13 +4,22 @@
 
 #include "CoreMinimal.h"
 #include "StructUtils/PropertyBag.h"
+#include "PropertyHistoryProcessor.h"
 
 class ISourceControlState;
+class FDetailColumnSizeData;
 
 struct FPropertyHistoryEntry
 {
 	FInstancedPropertyBag Value;
 	TSharedPtr<ISourceControlRevision> Revision;
+
+	TSharedPtr<IPropertyRowGenerator> PropertyRowGenerator;
+	TSharedPtr<IDetailTreeNode> Node;
+	TSharedPtr<IPropertyHandle> Handle;
+
+	TSharedPtr<FDetailColumnSizeData> ColumnSizeData;
+	TArray<TSharedPtr<FPropertyHistoryEntry>> Children;
 };
 
 class FPropertyHistoryHandler
@@ -22,10 +31,7 @@ public:
 	TArray<TSharedPtr<FPropertyHistoryEntry>> Entries;
 
 public:
-	explicit FPropertyHistoryHandler(const TArray<const FProperty*>& Properties)
-		: Properties(Properties)
-	{
-	}
+	explicit FPropertyHistoryHandler(const FPropertyHistoryProcessor& Processor);
 
 	bool Initialize(const UObject& Object);
 	void ShowHistory();
@@ -44,7 +50,7 @@ protected:
 	//~ End FTSTickerObjectBase Interface
 
 private:
-	const TArray<const FProperty*> Properties;
+	TArray<FPropertyData> PropertyChain;
 	FString PackageFilename;
 	TArray<TWeakObjectPtr<const UObject>> OuterChain;
 
@@ -55,6 +61,8 @@ private:
 	int32 HistoryIndex = 0;
 	TOptional<TFuture<FString>> Future;
 	TSharedPtr<ISourceControlState> SourceControlState;
+
+	const FGuid PropertyGuid;
 
 	void Tick();
 	void AddError(const FString& NewError);
