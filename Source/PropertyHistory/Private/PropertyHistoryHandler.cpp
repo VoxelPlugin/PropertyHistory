@@ -1,14 +1,21 @@
 ﻿// Copyright Voxel Plugin SAS. All Rights Reserved.
 
 #include "PropertyHistoryHandler.h"
-#include "PropertyHistoryUtilities.h"
-#include "SPropertyHistory.h"
-#include "Async/Async.h"
 #include "DiffUtils.h"
+#include "Async/Async.h"
+#include "SPropertyHistory.h"
 #include "ISourceControlModule.h"
 #include "SourceControlHelpers.h"
 #include "SourceControlWindows.h"
 #include "SourceControlOperations.h"
+#include "PropertyHistoryUtilities.h"
+#include "PropertyHistoryProcessor.h"
+
+FPropertyHistoryHandler::FPropertyHistoryHandler(const FPropertyHistoryProcessor& Processor)
+	: PropertyChain(Processor.Properties)
+	, PropertyGuid(Processor.Guid)
+{
+}
 
 bool FPropertyHistoryHandler::Initialize(const UObject& Object)
 {
@@ -64,6 +71,32 @@ void FPropertyHistoryHandler::ShowHistory()
 	const TSharedRef<FUpdateStatus> UpdateStatusOperation = ISourceControlOperation::Create<FUpdateStatus>();
 	UpdateStatusOperation->SetUpdateHistory(true);
 
+	ON_SCOPE_EXIT
+	{
+		const TSharedPtr<SDockTab> NewTab = FGlobalTabmanager::Get()->TryInvokeTab(FName("PropertyHistoryTab"));
+		if (!ensure(NewTab))
+		{
+			return;
+		}
+
+		const TSharedRef<SPropertyHistory> PropertyHistoryWidget = StaticCastSharedRef<SPropertyHistory>(NewTab->GetContent());
+		PropertyHistoryWidget->SetHandler(AsShared());
+
+		FSlateApplication::Get().SetKeyboardFocus(PropertyHistoryWidget, EFocusCause::SetDirectly);
+	};
+
+	if (PropertyChain[0].Property->IsA<FSetProperty>())
+	{
+		AddError("Set container type variables cannot be previewed. Preview inner items.");
+		return;
+	}
+
+	if (PropertyChain[0].Property->IsA<FMapProperty>())
+	{
+		AddError("Map container type variables cannot be previewed. Preview inner items.");
+		return;
+	}
+
 	if (!SourceControlProvider.Execute(
 		UpdateStatusOperation,
 		{ PackageFilename },
@@ -84,42 +117,7 @@ void FPropertyHistoryHandler::ShowHistory()
 		}))))
 	{
 		AddError("Failed to update status for " + PackageFilename);
-		return;
 	}
-
-	const FVector2f CursorPos = FSlateApplication::Get().GetCursorPos();
-
-	const TSharedRef<SWindow> Window =
-		SNew(SWindow)
-		.Type(EWindowType::Menu)
-		.SupportsMaximize(false)
-		.SupportsMinimize(false)
-		.IsPopupWindow(true)
-		.bDragAnywhere(true)
-		.IsTopmostWindow(true)
-		.SizingRule(ESizingRule::Autosized)
-		.ScreenPosition(CursorPos)
-		.SupportsTransparency(EWindowTransparency::PerPixel);
-
-	Window->MoveWindowTo(CursorPos);
-
-	const TSharedRef<SPropertyHistory> Widget =
-		SNew(SPropertyHistory)
-		.Window(Window)
-		.Handler(AsShared());
-
-	Window->SetContent(Widget);
-
-	const TSharedPtr<SWindow> RootWindow = FGlobalTabmanager::Get()->GetRootWindow();
-	if (!ensure(RootWindow))
-	{
-		return;
-	}
-
-	FSlateApplication::Get().AddWindowAsNativeChild(Window, RootWindow.ToSharedRef());
-	Window->BringToFront();
-
-	FSlateApplication::Get().SetKeyboardFocus(Widget, EFocusCause::SetDirectly);
 }
 
 void FPropertyHistoryHandler::ShowFullHistory()
@@ -261,16 +259,68 @@ void FPropertyHistoryHandler::Tick()
 		}
 	}
 
-	void* Container = NewObject;
-	for (int32 Index = Properties.Num() - 1; Index >= 1; Index--)
+	FPropertyHistoryProcessor Processor(NewObject, PropertyChain, PropertyGuid);
+	void* Container = nullptr;
+	if (!Processor.Process(Container))
 	{
-		Container = Properties[Index]->ContainerPtrToValuePtr<void>(Container);
+		return;
+	}
+
+	if (Container == nullptr)
+	{
+		return;
 	}
 
 	FInstancedPropertyBag Value;
-	Value.AddProperty("Value", Properties[0]);
 
-	if (!ensure(Value.SetValue("Value", Properties[0], Container) == EPropertyBagResult::Success))
+	const bool bValueSet = INLINE_LAMBDA
+	{
+		if (const FStructProperty* StructProperty = CastField<FStructProperty>(PropertyChain[0].Property))
+		{
+			if (StructProperty->Struct == FInstancedStruct::StaticStruct())
+			{
+				FInstancedStruct* InstancedStruct = StructProperty->ContainerPtrToValuePtr<FInstancedStruct>(Container);
+				if (!InstancedStruct->IsValid())
+				{
+					return false;
+				}
+
+				Container = InstancedStruct->GetMutableMemory();
+				if (!Container)
+				{
+					return false;
+				}
+
+				Value.AddProperty("Value", EPropertyBagPropertyType::Struct, InstancedStruct->GetScriptStruct());
+				const FConstStructView View(InstancedStruct->GetScriptStruct(), InstancedStruct->GetMutableMemory());
+				Value.SetValueStruct("Value", View);
+				return true;
+			}
+		}
+
+		Value.AddProperty("Value", PropertyChain[0].Property);
+		if (const FByteProperty* ByteProperty = CastField<FByteProperty>(PropertyChain[0].Property))
+		{
+			if (ByteProperty->Enum)
+			{
+				if (!ensure(Value.SetValueEnum("Value", *PropertyChain[0].Property->ContainerPtrToValuePtr<uint8>(Container), ByteProperty->Enum) == EPropertyBagResult::Success))
+				{
+					return false;
+				}
+
+				return true;
+			}
+		}
+
+		if (!ensure(Value.SetValue("Value", PropertyChain[0].Property, Container) == EPropertyBagResult::Success))
+		{
+			return false;
+		}
+
+		return true;
+	};
+
+	if (!bValueSet)
 	{
 		return;
 	}

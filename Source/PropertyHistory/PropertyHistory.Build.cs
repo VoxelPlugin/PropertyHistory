@@ -23,8 +23,10 @@ public class PropertyHistory : ModuleRules
 			"UnrealEd",
 			"ToolMenus",
 			"SceneOutliner",
+			"MaterialEditor",
 			"PropertyEditor",
 			"SourceControl",
+			"StructUtilsEditor",
 			"SourceControlWindows",
 		});
 	}
