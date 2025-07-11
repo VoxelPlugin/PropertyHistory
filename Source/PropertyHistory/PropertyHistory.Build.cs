@@ -28,6 +28,7 @@ public class PropertyHistory : ModuleRules
 			"SourceControl",
 			"StructUtilsEditor",
 			"SourceControlWindows",
+			"WorkspaceMenuStructure",
 		});
 	}
 }

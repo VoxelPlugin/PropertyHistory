@@ -4,9 +4,11 @@
 #include "ToolMenus.h"
 #include "SPropertyHistory.h"
 #include "DetailRowMenuContext.h"
+#include "WorkspaceMenuStructure.h"
 #include "PropertyHistoryHandler.h"
 #include "PropertyHistoryProcessor.h"
 #include "PropertyHistoryUtilities.h"
+#include "WorkspaceMenuStructureModule.h"
 #include "RevisionControlStyle/RevisionControlStyle.h"
 #include "Editor/PropertyEditor/Private/PropertyHandleImpl.h"
 #include "Editor/PropertyEditor/Private/SDetailSingleItemRow.h"
@@ -44,7 +46,8 @@ public:
 					];
 			}))
 			.SetDisplayName(INVTEXT("Property History"))
-			.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "RevisionControl.Actions.History"));
+			.SetIcon(FSlateIcon(FRevisionControlStyleManager::GetStyleSetName(), "RevisionControl.Actions.History"))
+			.SetGroup(WorkspaceMenu::GetMenuStructure().GetToolsCategory());
 		}
 
 		UToolMenu* Menu = UToolMenus::Get()->ExtendMenu(UE::PropertyEditor::RowContextMenuName);
@@ -281,6 +284,11 @@ public:
 						Handler->ShowHistory();
 					})));
 		}));
+	}
+	virtual void ShutdownModule() override
+	{
+		const TSharedRef<FGlobalTabmanager> TabManager = FGlobalTabmanager::Get();
+		TabManager->UnregisterNomadTabSpawner("PropertyHistoryTab");
 	}
 };
 
