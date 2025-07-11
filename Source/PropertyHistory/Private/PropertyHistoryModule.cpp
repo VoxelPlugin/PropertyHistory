@@ -8,11 +8,13 @@
 #include "PropertyHistoryProcessor.h"
 #include "PropertyHistoryUtilities.h"
 #include "RevisionControlStyle/RevisionControlStyle.h"
+#include "Editor/PropertyEditor/Private/PropertyHandleImpl.h"
 #include "Editor/PropertyEditor/Private/SDetailSingleItemRow.h"
 #include "Editor/PropertyEditor/Private/DetailRowMenuContextPrivate.h"
 
 DEFINE_PRIVATE_ACCESS(FPropertyNode, InstanceMetaData)
 DEFINE_PRIVATE_ACCESS(SDetailsViewBase, DetailLayouts)
+DEFINE_PRIVATE_ACCESS(SDetailTableRowBase, OwnerTreeNode)
 DEFINE_PRIVATE_ACCESS_FUNCTION(SDetailSingleItemRow, GetPropertyNode);
 
 UClass* UDetailRowMenuContextPrivate::GetPrivateStaticClass()
@@ -57,7 +59,20 @@ public:
 				return;
 			}
 
-			const TSharedPtr<SDetailSingleItemRow> Row = StaticCastSharedPtr<SDetailSingleItemRow>(ContextPrivate->Row.Pin());
+			const TSharedPtr<SDetailTableRowBase> RowBase = ContextPrivate->Row.Pin();
+			if (!RowBase)
+			{
+				return;
+			}
+
+			const TSharedPtr<FDetailTreeNode> TreeNode = PrivateAccess::OwnerTreeNode(*RowBase).Pin();
+			if (!TreeNode ||
+				TreeNode->GetNodeType() != EDetailNodeType::Item)
+			{
+				return;
+			}
+
+			const TSharedPtr<SDetailSingleItemRow> Row = StaticCastSharedPtr<SDetailSingleItemRow>(RowBase);
 			if (!Row)
 			{
 				return;
@@ -66,7 +81,22 @@ public:
 			TSharedPtr<FPropertyNode> Node = PrivateAccess::GetPropertyNode(*Row)();
 			if (!Node)
 			{
-				return;
+				if (Context->PropertyHandles.Num() == 0)
+				{
+					return;
+				}
+
+				const TSharedPtr<FPropertyHandleBase> PropertyHandle = StaticCastSharedPtr<FPropertyHandleBase>(Context->PropertyHandles[0]);
+				if (!PropertyHandle)
+				{
+					return;
+				}
+
+				Node = PropertyHandle->GetPropertyNode();
+				if (!Node)
+				{
+					return;
+				}
 			}
 
 			TArray<FPropertyData> Properties;
@@ -183,10 +213,29 @@ public:
 				return;
 			}
 
-			UObject* Object = nullptr;
-			if (Node->GetSingleObject(Object) != FPropertyAccess::Success)
+			UObject* Object;
 			{
-				return;
+				FReadAddressList ReadAddresses;
+				const bool bAllValuesTheSame = Node->GetReadAddress(false, ReadAddresses, false, false);
+				if (ReadAddresses.Num() == 1 ||
+					(ReadAddresses.Num() > 0 && bAllValuesTheSame))
+				{
+					Object = const_cast<UObject*>(ReadAddresses.GetObject(0));
+
+					// Ensure that all objects are the same
+					for (int32 Index = 1; Index < ReadAddresses.Num(); Index++)
+					{
+						const UObject* TargetObject = ReadAddresses.GetObject(Index);
+						if (Object != TargetObject)
+						{
+							return;
+						}
+					}
+				}
+				else
+				{
+					return;
+				}
 			}
 
 			if (!Object)
