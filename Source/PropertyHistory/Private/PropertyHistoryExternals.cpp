@@ -72,19 +72,3 @@ bool FPropertyNode::GetReadAddress(bool InRequiresSingleSelection,
 
 	return bAllValuesTheSame;
 }
-
-FPropertyAccess::Result FPropertyNode::GetSingleObject(UObject*& OutObject) const
-{
-	OutObject = nullptr;
-	FReadAddressList ReadAddresses;
-	bool bAllValuesTheSame = GetReadAddress(HasNodeFlags(EPropertyNodeFlags::SingleSelectOnly), ReadAddresses, false, true);
-
-	if ((ReadAddresses.Num() > 0 && bAllValuesTheSame) || ReadAddresses.Num() == 1)
-	{
-		OutObject = (UObject*)ReadAddresses.GetObject(0);
-
-		return FPropertyAccess::Success;
-	}
-
-	return ReadAddresses.Num() > 1 ? FPropertyAccess::MultipleValues : FPropertyAccess::Fail;
-}
