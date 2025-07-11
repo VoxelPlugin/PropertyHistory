@@ -13,6 +13,7 @@
 
 DEFINE_PRIVATE_ACCESS(FPropertyNode, InstanceMetaData)
 DEFINE_PRIVATE_ACCESS(SDetailsViewBase, DetailLayouts)
+DEFINE_PRIVATE_ACCESS(SDetailTableRowBase, OwnerTreeNode)
 DEFINE_PRIVATE_ACCESS_FUNCTION(SDetailSingleItemRow, GetPropertyNode);
 
 UClass* UDetailRowMenuContextPrivate::GetPrivateStaticClass()
@@ -57,7 +58,20 @@ public:
 				return;
 			}
 
-			const TSharedPtr<SDetailSingleItemRow> Row = StaticCastSharedPtr<SDetailSingleItemRow>(ContextPrivate->Row.Pin());
+			const TSharedPtr<SDetailTableRowBase> RowBase = ContextPrivate->Row.Pin();
+			if (!RowBase)
+			{
+				return;
+			}
+
+			const TSharedPtr<FDetailTreeNode> TreeNode = PrivateAccess::OwnerTreeNode(*RowBase).Pin();
+			if (!TreeNode ||
+				TreeNode->GetNodeType() != EDetailNodeType::Item)
+			{
+				return;
+			}
+
+			const TSharedPtr<SDetailSingleItemRow> Row = StaticCastSharedPtr<SDetailSingleItemRow>(RowBase);
 			if (!Row)
 			{
 				return;
