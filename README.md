@@ -2,6 +2,8 @@
 
 Property history is a small plugin to view property history inline. 
 
+**Only 5.5 and 5.6 are supported at this time**
+
 https://github.com/user-attachments/assets/a23e42a9-31a9-49ec-8a42-d61929b55043
 
 You can download it on Fab: https://www.fab.com/listings/0edd8744-2384-4009-b997-e1ec7795a316
