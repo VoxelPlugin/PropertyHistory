@@ -13,18 +13,14 @@
 #include "Editor/PropertyEditor/Private/PropertyHandleImpl.h"
 #include "Editor/PropertyEditor/Private/SDetailSingleItemRow.h"
 #include "Editor/PropertyEditor/Private/DetailRowMenuContextPrivate.h"
+#include "Framework/Docking/TabManager.h"
+#include "Widgets/Docking/SDockTab.h"
 
 DEFINE_PRIVATE_ACCESS(FPropertyNode, InstanceMetaData)
+
 DEFINE_PRIVATE_ACCESS(SDetailsViewBase, DetailLayouts)
 DEFINE_PRIVATE_ACCESS(SDetailTableRowBase, OwnerTreeNode)
 DEFINE_PRIVATE_ACCESS_FUNCTION(SDetailSingleItemRow, GetPropertyNode);
-
-UClass* UDetailRowMenuContextPrivate::GetPrivateStaticClass()
-{
-	static UClass* Class = FindObjectChecked<UClass>(nullptr, TEXT("/Script/PropertyEditor.DetailRowMenuContextPrivate"));
-	check(Class);
-	return Class;
-}
 
 class FPropertyHistoryModule : public IModuleInterface
 {
@@ -160,7 +156,7 @@ public:
 					}
 
 					int32 ArrayIndex = -1;
-					LexFromString(ArrayIndex, Parts[2]);
+					LexFromString(ArrayIndex, *Parts[2]);
 
 					Properties.Add({ Property, ArrayIndex });
 					NumAddedProperties++;
