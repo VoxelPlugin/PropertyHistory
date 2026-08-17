@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "DetailColumnSizeData.h"
 #include "PropertyHistoryHandler.h"
+#include "Widgets/SCompoundWidget.h"
+#include "Widgets/Views/STreeView.h"
 
 class SPropertyHistory : public SCompoundWidget
 {

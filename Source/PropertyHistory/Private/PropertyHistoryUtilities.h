@@ -1,4 +1,4 @@
-﻿// Copyright Voxel Plugin SAS. All Rights Reserved.
+// Copyright Voxel Plugin SAS. All Rights Reserved.
 
 #pragma once
 
@@ -6,6 +6,8 @@
 #include "Misc/EngineVersionComparison.h"
 
 #define PROPERTY_HISTORY_ENGINE_VERSION (ENGINE_MAJOR_VERSION * 100 + ENGINE_MINOR_VERSION)
+
+class IInterface;
 
 struct FLambdaCaller
 {
@@ -413,3 +415,4 @@ FProperty& FindFPropertyChecked_Impl(const FName Name)
 	}())
 
 #define FindFPropertyChecked(Class, Name) FindFPropertyChecked_ByName(Class, GET_MEMBER_NAME_CHECKED(Class, Name))
+

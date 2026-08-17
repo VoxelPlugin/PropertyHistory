@@ -5,7 +5,13 @@
 #include "CoreMinimal.h"
 #include "StructUtils/PropertyBag.h"
 #include "PropertyHistoryProcessor.h"
+#include "Async/Future.h"
+#include "Containers/Ticker.h"
 
+class IPropertyHandle;
+class IDetailTreeNode;
+class IPropertyRowGenerator;
+class ISourceControlRevision;
 class ISourceControlState;
 class FDetailColumnSizeData;
 

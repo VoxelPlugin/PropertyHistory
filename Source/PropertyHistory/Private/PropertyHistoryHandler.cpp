@@ -10,6 +10,10 @@
 #include "SourceControlOperations.h"
 #include "PropertyHistoryUtilities.h"
 #include "PropertyHistoryProcessor.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Framework/Docking/TabManager.h"
+#include "UObject/Package.h"
+#include "Widgets/Docking/SDockTab.h"
 
 FPropertyHistoryHandler::FPropertyHistoryHandler(const FPropertyHistoryProcessor& Processor)
 	: PropertyChain(Processor.Properties)

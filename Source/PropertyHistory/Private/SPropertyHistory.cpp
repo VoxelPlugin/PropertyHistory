@@ -4,12 +4,18 @@
 #include "IDetailTreeNode.h"
 #include "IDetailPropertyRow.h"
 #include "IPropertyRowGenerator.h"
-#include "ISourceControlRevision.h"
 #include "PropertyHistoryUtilities.h"
 #include "Widgets/Images/SThrobber.h"
 #include "Widgets/Layout/SScaleBox.h"
 #include "Framework/Commands/GenericCommands.h"
 #include "InstancedPropertyBagStructureDataProvider.h"
+#include "ISourceControlRevision.h"
+#include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "Misc/ConfigCacheIni.h"
+#include "Modules/ModuleManager.h"
+#include "Styling/StyleColors.h"
+#include "Widgets/Layout/SSeparator.h"
+#include "Widgets/Layout/SSpacer.h"
 
 void SPropertyHistory::Construct(const FArguments& Args)
 {
@@ -559,7 +565,7 @@ FSlateColor SPropertyEntry::GetRowBackgroundColor(const int32 IndentLevel, const
 		}
 	}
 
-	static const uint8 ColorOffsets[] =
+	static constexpr uint8 ColorOffsets[] =
 	{
 		0, 4, (4 + 2), (6 + 4), (10 + 6)
 	};

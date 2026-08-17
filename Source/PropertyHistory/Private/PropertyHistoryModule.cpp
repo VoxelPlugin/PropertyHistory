@@ -168,7 +168,7 @@ public:
 #if PROPERTY_HISTORY_ENGINE_VERSION >= 506
 					const TSharedPtr<SDetailsViewBase> DetailsViewBase = StaticCastSharedPtr<SDetailsViewBase>(Context->DetailsView.Pin());
 #else
-					SDetailsViewBase* DetailsViewBase = reinterpret_cast<SDetailsViewBase*>(Context->DetailsView);
+					SDetailsViewBase* DetailsViewBase = reinterpret_cast<SDetailsViewBase*>(Context->DetailsView.Pin().Get());
 #endif
 					const TSharedPtr<FPropertyNode> RootNode = INLINE_LAMBDA -> TSharedPtr<FPropertyNode>
 					{
@@ -253,7 +253,7 @@ public:
 #if PROPERTY_HISTORY_ENGINE_VERSION >= 506
 			Processor.DetailsView = Context->DetailsView.Pin();
 #else
-			Processor.DetailsView = Context->DetailsView;
+			Processor.DetailsView = Context->DetailsView.Pin().Get();
 #endif
 			void* Container = nullptr;
 			if (!Processor.Process(Container))

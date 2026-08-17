@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "PropertyHistoryUtilities.h"
 
+class IDetailsView;
+class UMaterialExpression;
 class UPreviewMaterial;
 class UMaterialEditorInstanceConstant;
 
